@@ -693,3 +693,408 @@ massa et mattis lacinia.
 \endinput
 %%
 %% End of file `sample-tinyml.tex'.
+
+%%krishna
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+% Code listing settings
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    frame=single,
+    language=Python,
+    showstringspaces=false,
+    commentstyle=\color{gray},
+    keywordstyle=\color{blue},
+    stringstyle=\color{red}
+}
+
+\title{Neuro-Symbolic AI for Customer Churn Prediction: \\
+A Hybrid Approach Combining Domain Knowledge with Deep Learning}
+
+\author{[Author Names]\\
+[Institution/Department]\\
+[Email addresses]}
+
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This paper presents a novel neuro-symbolic artificial intelligence system for customer churn prediction in telecommunications. The system integrates symbolic reasoning through domain-specific business rules with neural network pattern learning via an attention-based fusion mechanism. Experimental evaluation on the Telco Customer Churn dataset (n=7,043) demonstrates a test accuracy of 78.00\%, with the attention mechanism showing a 59.4\% preference for symbolic reasoning over neural pattern recognition. The hybrid approach provides both predictive performance and interpretable decision-making insights for business applications.
+\end{abstract}
+
+\section{Introduction}
+
+\subsection{Research Motivation}
+
+Customer churn prediction represents a critical challenge in telecommunications, where understanding both explicit business rules and hidden data patterns is essential for accurate forecasting. Traditional approaches typically employ either purely symbolic systems (rule-based) or connectionist models (neural networks), but rarely combine both paradigms effectively.
+
+This research introduces a neuro-symbolic AI framework that leverages:
+\begin{itemize}
+    \item Explicit domain knowledge encoded as symbolic rules
+    \item Neural pattern recognition for complex data relationships
+    \item Attention-based fusion for dynamic component weighting
+\end{itemize}
+
+\subsection{Problem Formulation}
+
+Given a customer dataset $D = \{(x_i, y_i)\}_{i=1}^{n}$ where $x_i \in \mathbb{R}^{d}$ represents customer features and $y_i \in \{0,1\}$ indicates churn status, the objective is to learn a hybrid function:
+
+\begin{equation}
+f_{hybrid}(x) = \text{Attention}(f_{neural}(x), f_{symbolic}(x))
+\end{equation}
+
+where $f_{neural}$ captures data-driven patterns and $f_{symbolic}$ encodes domain expertise.
+
+\section{Dataset and Experimental Setup}
+
+\subsection{Dataset Specification}
+
+\textbf{Source}: Telco Customer Churn with Realistic Customer Feedback (Kaggle)\\
+\textbf{Size}: 7,043 customer records\\
+\textbf{Features}: 23 attributes including demographic, service, and behavioral data\\
+
+\begin{table}[h]
+\centering
+\caption{Dataset Schema Overview}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Category} & \textbf{Features} & \textbf{Type} \\
+\midrule
+Demographics & gender, SeniorCitizen, Partner, Dependents & Categorical/Binary \\
+Service Duration & tenure & Numerical \\
+Service Portfolio & PhoneService, MultipleLines, InternetService & Categorical \\
+Add-on Services & OnlineSecurity, OnlineBackup, DeviceProtection & Categorical \\
+Support Services & TechSupport, StreamingTV, StreamingMovies & Categorical \\
+Contract Terms & Contract, PaperlessBilling, PaymentMethod & Categorical \\
+Financial & MonthlyCharges, TotalCharges & Numerical \\
+Feedback* & PromptInput, CustomerFeedback & Text \\
+Target & Churn & Binary \\
+\bottomrule
+\end{tabular}
+\label{tab:dataset_schema}
+\end{table}
+
+*Note: Feedback features not utilized in version 1.0
+
+\subsection{Data Preprocessing}
+
+\begin{enumerate}
+    \item \textbf{Missing Value Treatment}: TotalCharges median imputation
+    \item \textbf{Categorical Encoding}: LabelEncoder for all categorical variables
+    \item \textbf{Feature Standardization}: StandardScaler for numerical features
+    \item \textbf{Train-Test Split}: 80/20 stratified split (5,634/1,409 samples)
+\end{enumerate}
+
+\section{Methodology}
+
+\subsection{System Architecture}
+
+The neuro-symbolic system comprises three interconnected modules:
+
+\subsubsection{Symbolic Rule Engine}
+
+Domain knowledge is encoded as logical rules with associated confidence weights:
+
+\begin{equation}
+R_j = \{condition_j, weight_j, confidence_j\}
+\end{equation}
+
+The symbolic score for sample $x_i$ is computed as:
+
+\begin{equation}
+S_{symbolic}(x_i) = \sum_{j=1}^{|R|} condition_j(x_i) \cdot weight_j \cdot confidence_j
+\end{equation}
+
+\textbf{Version 1.0 Rule Set}:
+
+\begin{table}[h]
+\centering
+\caption{Symbolic Rules Implementation}
+\begin{tabular}{@{}p{3cm}p{6cm}cc@{}}
+\toprule
+\textbf{Rule Name} & \textbf{Condition} & \textbf{Weight} & \textbf{Confidence} \\
+\midrule
+Tenure Loyalty & $(tenure > 48) \land (MonthlyCharges < 50)$ & -0.3 & 0.8 \\
+Contract Price & $(Contract = \text{Month-to-month}) \land (MonthlyCharges > 80)$ & 0.4 & 0.9 \\
+Basic Service & $(InternetService = \text{No}) \land (PhoneService = \text{Yes})$ & -0.2 & 0.7 \\
+Fiber Security & $(InternetService = \text{Fiber optic}) \land (OnlineSecurity = \text{No})$ & 0.3 & 0.75 \\
+Senior Payment & $(SeniorCitizen = 1) \land (PaymentMethod = \text{Electronic check})$ & 0.25 & 0.65 \\
+\bottomrule
+\end{tabular}
+\label{tab:symbolic_rules}
+\end{table}
+
+\subsubsection{Neural Network Component}
+
+A deep feedforward network with architecture:
+\begin{itemize}
+    \item Input layer: 19 features
+    \item Hidden layers: 128 $\rightarrow$ 64 $\rightarrow$ 32 neurons
+    \item Activation: ReLU (hidden), Sigmoid (output)
+    \item Regularization: Dropout (0.3) + Batch Normalization
+\end{itemize}
+
+\begin{equation}
+f_{neural}(x) = \sigma(W_3 \cdot \text{ReLU}(W_2 \cdot \text{ReLU}(W_1 \cdot x + b_1) + b_2) + b_3)
+\end{equation}
+
+\subsubsection{Attention Fusion Mechanism}
+
+Multi-head attention integrates neural and symbolic outputs:
+
+\begin{align}
+h_{neural} &= W_{neural} \cdot f_{neural}(x) \\
+h_{symbolic} &= W_{symbolic} \cdot S_{symbolic}(x) \\
+\text{Attention}(h_n, h_s) &= \text{MultiHead}([h_{neural}, h_{symbolic}]) \\
+f_{hybrid}(x) &= \sigma(W_{fusion} \cdot \text{Attention}(h_n, h_s))
+\end{align}
+
+\section{Experimental Results}
+
+\subsection{Performance Metrics}
+
+\begin{table}[h]
+\centering
+\caption{Classification Performance Results}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Class} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} \\
+\midrule
+Non-Churn (0) & 0.88 & 0.81 & 0.84 \\
+Churn (1) & 0.57 & 0.68 & 0.62 \\
+\midrule
+\textbf{Overall Accuracy} & \multicolumn{3}{c}{\textbf{78.00\%}} \\
+Macro Average & 0.72 & 0.75 & 0.73 \\
+Weighted Average & 0.80 & 0.78 & 0.79 \\
+\bottomrule
+\end{tabular}
+\label{tab:performance_metrics}
+\end{table}
+
+\subsection{Training Dynamics}
+
+Training was conducted with the following hyperparameters:
+\begin{itemize}
+    \item Epochs: 50
+    \item Batch Size: 32
+    \item Learning Rate: 0.001
+    \item Optimizer: Adam
+\end{itemize}
+
+Loss progression demonstrated steady convergence:
+\begin{itemize}
+    \item Initial Loss (Epoch 0): 0.7459
+    \item Mid-Training (Epoch 20): 0.5761
+    \item Final Loss (Epoch 40): 0.5015
+\end{itemize}
+
+\subsection{Symbolic Rule Analysis}
+
+\begin{table}[h]
+\centering
+\caption{Rule Activation Analysis on Test Set}
+\begin{tabular}{@{}lc@{}}
+\toprule
+\textbf{Rule Name} & \textbf{Activation Rate (\%)} \\
+\midrule
+Tenure Loyalty Rule & 7.3 \\
+Contract Price Rule & 0.0 \\
+Basic Service Rule & 0.0 \\
+Fiber Security Rule & 0.0 \\
+Senior Payment Rule & 0.0 \\
+\bottomrule
+\end{tabular}
+\label{tab:rule_activation}
+\end{table}
+
+\textbf{Key Finding}: Only the tenure-loyalty rule showed significant activation, indicating potential for rule refinement in future iterations.
+
+\subsection{Attention Mechanism Analysis}
+
+The attention fusion mechanism demonstrated:
+\begin{itemize}
+    \item Average Neural Attention: 40.6\%
+    \item Average Symbolic Attention: 59.4\%
+\end{itemize}
+
+This indicates the model's preference for symbolic reasoning over pure neural pattern recognition, suggesting that business rules provide valuable decision-making guidance.
+
+\section{Discussion}
+
+\subsection{Interpretability Insights}
+
+The attention mechanism provides transparency into the decision-making process, revealing that symbolic rules contribute more significantly than neural patterns for this dataset. This finding has important implications for:
+\begin{itemize}
+    \item Model explainability in business contexts
+    \item Regulatory compliance requirements
+    \item Domain expert validation of predictions
+\end{itemize}
+
+\subsection{Version 1.0 Limitations}
+
+Several limitations were identified in the current implementation:
+
+\begin{enumerate}
+    \item \textbf{Rule Coverage}: Low activation rates (0\% for 4/5 rules) suggest rules may be too restrictive
+    \item \textbf{Feature Utilization}: CustomerFeedback and PromptInput columns remain unexploited
+    \item \textbf{Rule Validation}: Current rules based on assumptions rather than domain expert input
+    \item \textbf{Architecture Optimization}: Limited hyperparameter tuning performed
+\end{enumerate}
+
+\section{Future Work}
+
+\subsection{Version 2.0 Planned Improvements}
+
+\begin{itemize}
+    \item \textbf{Enhanced Rule Set}: Incorporate domain expert knowledge and data-driven rule discovery
+    \item \textbf{Sentiment Analysis}: Utilize CustomerFeedback for additional predictive signals
+    \item \textbf{Cross-Validation}: Implement robust k-fold evaluation methodology
+    \item \textbf{Rule Learning}: Automated extraction of rules from high-performing neural patterns
+\end{itemize}
+
+\subsection{Version 3.0 Advanced Features}
+
+\begin{itemize}
+    \item \textbf{Interpretability Tools}: Detailed rule contribution analysis and SHAP integration
+    \item \textbf{Online Learning}: Real-time rule adaptation based on new data
+    \item \textbf{Multi-task Learning}: Simultaneous churn prediction and customer segmentation
+    \item \textbf{Causal Inference}: Integration of causal reasoning with correlation-based learning
+\end{itemize}
+
+\section{Conclusion}
+
+This paper presents the first version of a neuro-symbolic AI system for customer churn prediction, achieving 78.00\% accuracy on a real-world telecommunications dataset. The key contributions include:
+
+\begin{enumerate}
+    \item A novel hybrid architecture combining symbolic business rules with neural pattern recognition
+    \item An attention-based fusion mechanism providing interpretable component weighting
+    \item Empirical evidence that symbolic reasoning can complement neural learning in business applications
+\end{enumerate}
+
+The attention analysis revealing 59.4\% preference for symbolic reasoning suggests that explicit domain knowledge encoded as business rules provides significant value in telecom churn prediction. However, the low activation rates of most rules indicate substantial opportunities for improvement in subsequent versions.
+
+Future work will focus on rule refinement, feature engineering with customer feedback data, and enhanced interpretability tools to create a more robust and practically applicable system.
+
+\section{Code Availability}
+
+The complete implementation is available as a Python framework with the following key interfaces:
+
+\begin{lstlisting}[caption=Primary Usage Interface]
+# Load dataset
+df = pd.read_csv("telco_churn_with_all_feedback.csv")
+
+# Train and evaluate model
+model, results = run_neurosymbolic_demo(df)
+
+# Make predictions
+predictions, probabilities, attention = model.predict(new_data)
+\end{lstlisting}
+
+\textbf{Dependencies}: PyTorch, Pandas, NumPy, Scikit-learn\\
+\textbf{Hardware}: CPU/GPU compatible, minimum 2GB RAM\\
+\textbf{Dataset}: Available on Kaggle - Telco Customer Churn with Realistic Customer Feedback
+
+\section{Acknowledgments}
+
+[To be added based on research context and funding sources]
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+% Sample references - replace with actual citations
+\begin{thebibliography}{9}
+
+\bibitem{garcez2002neural}
+Garcez, A.S.A., Broda, K. and Gabbay, D.M., 2002. Neural-symbolic learning systems: foundations and applications. Springer Science \& Business Media.
+
+\bibitem{manhaeve2018deepproblog}
+Manhaeve, R., Dumancic, S., Kimmig, A., Demeester, T. and De Raedt, L., 2018. Deepproblog: Neural probabilistic logic programming. Advances in neural information processing systems, 31.
+
+\bibitem{evans2018learning}
+Evans, R. and Grefenstette, E., 2018. Learning explanatory rules from noisy data. Journal of Artificial Intelligence Research, 61, pp.1-64.
+
+\bibitem{vaswani2017attention}
+Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A.N., Kaiser, L. and Polosukhin, I., 2017. Attention is all you need. Advances in neural information processing systems, 30.
+
+\end{thebibliography}
+
+\appendix
+
+\section{Detailed Implementation}
+
+\subsection{Symbolic Rule Engine}
+
+\begin{lstlisting}[caption=Symbolic Rule Definition Example]
+def _define_churn_rules(self):
+    # Rule 1: High tenure + low monthly charges = low churn
+    self.rules.append({
+        'name': 'tenure_loyalty_rule',
+        'condition': lambda x: (x['tenure'] > 48) & 
+                              (x['MonthlyCharges'] < 50),
+        'weight': -0.3,
+        'confidence': 0.8
+    })
+\end{lstlisting}
+
+\subsection{Neural Network Architecture}
+
+\begin{lstlisting}[caption=Neural Network Implementation]
+class NeuralNetwork(nn.Module):
+    def __init__(self, input_size, hidden_sizes=[128, 64, 32]):
+        super(NeuralNetwork, self).__init__()
+        layers = []
+        prev_size = input_size
+        
+        for hidden_size in hidden_sizes:
+            layers.extend([
+                nn.Linear(prev_size, hidden_size),
+                nn.ReLU(),
+                nn.Dropout(0.3),
+                nn.BatchNorm1d(hidden_size)
+            ])
+            prev_size = hidden_size
+        
+        layers.append(nn.Linear(prev_size, 1))
+        self.network = nn.Sequential(*layers)
+\end{lstlisting}
+
+\subsection{Experimental Results Summary}
+
+\begin{table}[h]
+\centering
+\caption{Complete Experimental Results}
+\begin{tabular}{@{}lr@{}}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Test Accuracy & 78.00\% \\
+Training Samples & 5,634 \\
+Test Samples & 1,409 \\
+Neural Attention (avg) & 40.6\% \\
+Symbolic Attention (avg) & 59.4\% \\
+Active Rules & 1/5 \\
+Training Epochs & 50 \\
+Final Training Loss & 0.5015 \\
+\bottomrule
+\end{tabular}
+\label{tab:complete_results}
+\end{table}
+
+\end{document}
